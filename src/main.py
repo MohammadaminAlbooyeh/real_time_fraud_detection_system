@@ -58,29 +58,67 @@ def get_user_names(num_names=6, name_length=5):
     return names
 
 def play_game():
-    # Step 1: Generate 1000 random names
-    all_names = generate_random_names()
-    # Step 2: Get 6 names from user
-    user_names = get_user_names()
+
+def play_multiplayer_game():
+    # Step 1: Select difficulty
+    print("Select difficulty level:")
+    print("1. Easy (word length 4, 5 attempts)")
+    print("2. Medium (word length 5, 3 attempts)")
+    print("3. Hard (word length 6, 2 attempts)")
+    while True:
+        diff = input("Enter 1, 2, or 3: ")
+        if diff == "1":
+            word_length = 4
+            attempts = 5
+            break
+        elif diff == "2":
+            word_length = 5
+            attempts = 3
+            break
+        elif diff == "3":
+            word_length = 6
+            attempts = 2
+            break
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
+    # Step 2: Generate 1000 random names
+    all_names = generate_random_names(num_names=1000, name_length=word_length)
     # Step 3: Computer selects 5 names from the list
     import random
     computer_names = random.sample(all_names, 5)
-    # Step 4: User has 3 attempts to guess any of the computer's names
-    attempts = 3
-    win = False
-    print("\nTry to guess one of the computer's selected names!")
-    for attempt in range(1, attempts + 1):
-        guess = input(f"Attempt {attempt}: Enter your guess (exactly 5 characters): ")
-        if guess in computer_names:
-            win = True
-            break
-        else:
-            print("Wrong guess.")
-    # Step 5: Print result
-    if win:
-        print("win")
-    else:
-        print("lose")
+    print("Computer has selected 5 secret names.")
+    # Step 4: Get number of players
+    while True:
+        try:
+            num_players = int(input("Enter number of players: "))
+            if num_players > 0:
+                break
+            else:
+                print("Number of players must be positive.")
+        except ValueError:
+            print("Please enter a valid integer.")
+    # Step 5: For each player, get names and play
+    results = []
+    for player in range(1, num_players + 1):
+        print(f"\nPlayer {player}, enter your 6 names:")
+        user_names = get_user_names(num_names=6, name_length=word_length)
+        print(f"Player {player}, try to guess one of the computer's selected names!")
+        win = False
+        for attempt in range(1, attempts + 1):
+            guess = input(f"Attempt {attempt}: Enter your guess (exactly {word_length} characters): ")
+            if guess in computer_names:
+                win = True
+                break
+            else:
+                print("Wrong guess.")
+        results.append((player, win))
+    # Step 6: Print results
+    print("\nGame Results:")
+    for player, win in results:
+        print(f"Player {player}: {'win' if win else 'lose'}")
+
+if __name__ == "__main__":
+    play_multiplayer_game()
 
 if __name__ == "__main__":
     play_game()
