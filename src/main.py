@@ -98,24 +98,61 @@ def play_multiplayer_game():
         except ValueError:
             print("Please enter a valid integer.")
     # Step 5: For each player, get names and play
+    # Load dictionary
+    try:
+        with open("dictionary.txt", "r") as f:
+            valid_words = set(line.strip().lower() for line in f if line.strip())
+    except FileNotFoundError:
+        print("Warning: dictionary.txt not found. All guesses will be accepted.")
+        valid_words = None
+
     results = []
+    history = []
     for player in range(1, num_players + 1):
         print(f"\nPlayer {player}, enter your 6 names:")
         user_names = get_user_names(num_names=6, name_length=word_length)
         print(f"Player {player}, try to guess one of the computer's selected names!")
+        guesses = []
         win = False
         for attempt in range(1, attempts + 1):
-            guess = input(f"Attempt {attempt}: Enter your guess (exactly {word_length} characters): ")
+            while True:
+                guess = input(f"Attempt {attempt}: Enter your guess (exactly {word_length} characters): ").lower()
+                if len(guess) != word_length:
+                    print(f"Guess must be exactly {word_length} characters.")
+                    continue
+                if valid_words is not None and guess not in valid_words:
+                    print("Not a valid word. Try again.")
+                    continue
+                break
+            guesses.append(guess)
             if guess in computer_names:
                 win = True
                 break
             else:
                 print("Wrong guess.")
         results.append((player, win))
+        history.append({
+            "player": player,
+            "user_names": user_names,
+            "guesses": guesses,
+            "result": "win" if win else "lose"
+        })
     # Step 6: Print results
     print("\nGame Results:")
     for player, win in results:
         print(f"Player {player}: {'win' if win else 'lose'}")
+
+    # Save game history to CSV
+    with open("game_history.csv", mode="a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["player", "user_names", "guesses", "result"])
+        for entry in history:
+            writer.writerow([
+                entry["player"],
+                ",".join(entry["user_names"]),
+                ",".join(entry["guesses"]),
+                entry["result"]
+            ])
 
 if __name__ == "__main__":
     play_multiplayer_game()
