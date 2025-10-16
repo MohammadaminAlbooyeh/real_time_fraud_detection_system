@@ -2,6 +2,8 @@ from random import randint, seed
 import csv
 import os
 import string
+import random
+from speech_recognition import Recognizer, Microphone
 
 seed(42)  # For reproducibility
 
@@ -58,6 +60,7 @@ def get_user_names(num_names=6, name_length=5):
     return names
 
 def play_game():
+    pass
 
 def play_multiplayer_game():
     # Step 1: Select difficulty
@@ -84,7 +87,6 @@ def play_multiplayer_game():
     # Step 2: Generate 1000 random names
     all_names = generate_random_names(num_names=1000, name_length=word_length)
     # Step 3: Computer selects 5 names from the list
-    import random
     computer_names = random.sample(all_names, 5)
     print("Computer has selected 5 secret names.")
     # Step 4: Get number of players
@@ -211,3 +213,103 @@ if __name__ == "__main__":
     save_word_frequencies_to_csv(random_word_freqs, filename="random_words.csv")
     user_names = user_names_guess()
     print("User names:", user_names)
+
+class AIOpponent:
+    def __init__(self, word_list):
+        self.word_list = word_list
+        self.possible_words = set(word_list)
+
+    def filter_words(self, feedback, guess):
+        """Filter possible words based on feedback."""
+        new_possible_words = set()
+        for word in self.possible_words:
+            match = True
+            for i, char in enumerate(guess):
+                if feedback[i] == 'G' and word[i] != char:
+                    match = False
+                    break
+                elif feedback[i] == 'Y' and (char not in word or word[i] == char):
+                    match = False
+                    break
+                elif feedback[i] == 'B' and char in word:
+                    match = False
+                    break
+            if match:
+                new_possible_words.add(word)
+        self.possible_words = new_possible_words
+
+    def make_guess(self):
+        """Make a guess from the remaining possible words."""
+        return next(iter(self.possible_words)) if self.possible_words else None
+
+# Example usage of AI Opponent
+if __name__ == "__main__":
+    word_list = generate_random_names(num_names=1000, name_length=5)
+    ai = AIOpponent(word_list)
+
+    # Simulate a game
+    secret_word = random.choice(word_list)
+    print(f"Secret word: {secret_word}")
+
+    for attempt in range(6):
+        guess = ai.make_guess()
+        if not guess:
+            print("AI has no more guesses.")
+            break
+        print(f"AI guesses: {guess}")
+
+        # Simulate feedback
+        feedback = []
+        for i, char in enumerate(guess):
+            if char == secret_word[i]:
+                feedback.append('G')  # Green
+            elif char in secret_word:
+                feedback.append('Y')  # Yellow
+            else:
+                feedback.append('B')  # Black
+
+        print(f"Feedback: {''.join(feedback)}")
+        if ''.join(feedback) == 'G' * len(secret_word):
+            print("AI wins!")
+            break
+
+        ai.filter_words(feedback, guess)
+
+def enable_colorblind_mode():
+    """Enable alternative visual indicators for colorblind players."""
+    print("Colorblind mode enabled. Feedback will use symbols instead of colors.")
+
+def get_feedback_with_symbols(guess, secret_word):
+    """Provide feedback using symbols for colorblind mode."""
+    feedback = []
+    for i, char in enumerate(guess):
+        if char == secret_word[i]:
+            feedback.append('✔')  # Correct position
+        elif char in secret_word:
+            feedback.append('✱')  # Misplaced
+        else:
+            feedback.append('✖')  # Incorrect
+    return ''.join(feedback)
+
+def voice_input():
+    """Capture voice input and convert it to text."""
+    recognizer = Recognizer()
+    with Microphone() as source:
+        print("Listening for your guess...")
+        try:
+            audio = recognizer.listen(source)
+            guess = recognizer.recognize_google(audio)
+            print(f"You said: {guess}")
+            return guess
+        except Exception as e:
+            print(f"Error recognizing voice input: {e}")
+            return None
+
+# Example usage
+if __name__ == "__main__":
+    secret_word = "apple"
+    enable_colorblind_mode()
+    guess = voice_input()
+    if guess:
+        feedback = get_feedback_with_symbols(guess, secret_word)
+        print(f"Feedback: {feedback}")

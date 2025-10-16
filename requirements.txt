@@ -1,1 +1,5 @@
 csv
+kivy
+pyinstaller
+flask
+flask-socketio

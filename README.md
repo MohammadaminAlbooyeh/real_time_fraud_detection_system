@@ -1,8 +1,6 @@
-
-
 ## Wordle Project
 
-This project generates word frequency data, processes real names, and includes a simple guessing game based on random names.
+This project generates word frequency data, processes real names, and includes a simple guessing game based on random names. It now also features an AI opponent and word suggestions.
 
 ---
 
@@ -20,6 +18,10 @@ This project generates word frequency data, processes real names, and includes a
   - Computer selects 5 random names from the generated list
   - User has 3 attempts to guess any of the computer's selected names
   - Prints "win" if guessed correctly, otherwise "lose"
+- **AI Opponent**
+  - Play against an AI that guesses words intelligently based on feedback.
+- **Word Suggestions**
+  - Get suggestions for possible words based on your guesses and feedback.
 
 ---
 
@@ -62,6 +64,15 @@ python src/main.py
 ```
 You will be prompted to enter 6 names (each exactly 5 characters). The computer will select 5 random names from its generated list. You have 3 attempts to guess any of the computer's selected names. If you guess correctly, you win; otherwise, you lose.
 
+#### 5. Play Against the AI Opponent
+
+To play against the AI, run:
+
+```bash
+python src/main.py
+```
+The AI will guess words intelligently based on feedback. You can observe its guesses and how it narrows down possibilities.
+
 ---
 
 ### Example Output
@@ -87,4 +98,10 @@ win
 
 ### Requirements
 
-No external dependencies required for basic functionality. All modules used are part of Python's standard library.
+Install the following dependencies:
+
+```bash
+pip install flask flask-socketio
+```
+
+These are required for multiplayer and chat functionality. All other modules used are part of Python's standard library.
