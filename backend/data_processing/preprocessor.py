@@ -42,8 +42,13 @@ class OutlierCapper(BaseEstimator, TransformerMixin):
     def __init__(self, factor: float = 3.0):
         self.factor = factor
         self.bounds_ = {}
+        self.feature_names_in_ = []
 
     def fit(self, X: pd.DataFrame, y: np.ndarray | None = None) -> "OutlierCapper":
+        if isinstance(X, np.ndarray):
+            import pandas as pd
+            X = pd.DataFrame(X)
+        self.feature_names_in_ = list(X.columns)
         for col in X.select_dtypes(include=[np.number]).columns:
             Q1 = X[col].quantile(0.25)
             Q3 = X[col].quantile(0.75)
@@ -54,11 +59,17 @@ class OutlierCapper(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        if isinstance(X, np.ndarray):
+            import pandas as pd
+            X = pd.DataFrame(X, columns=self.feature_names_in_)
         X = X.copy()
         for col, (lower, upper) in self.bounds_.items():
             if col in X.columns:
                 X[col] = X[col].clip(lower, upper)
         return X
+
+    def get_feature_names_out(self, input_features=None):
+        return np.array(self.feature_names_in_)
 
 
 class Preprocessor:

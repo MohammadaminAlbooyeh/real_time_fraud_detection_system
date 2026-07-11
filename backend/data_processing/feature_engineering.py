@@ -207,7 +207,7 @@ class FeatureEngineer:
             and profile.last_tx_country != tx.merchant_country
             and self._estimate_distance(profile.last_tx_country, tx.merchant_country)
             / max(1, (tx.timestamp - profile.last_tx_timestamp).total_seconds() / 3600)
-            > settings.RULE_IMPOSSIBLE_TRAVEL_KM_PER_HOUR
+            > settings.RULE_IMPOSSIBLE_TRAVEL_SPEED_KMH
         ) else 0.0
 
         return features

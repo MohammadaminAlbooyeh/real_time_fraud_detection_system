@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 from uuid import UUID, uuid4
@@ -41,7 +41,7 @@ class TransactionBase(BaseModel):
     ip_country: str = Field(..., min_length=2, max_length=2, description="Country from IP geolocation")
     card_present: bool = Field(default=False, description="Whether card was physically present")
     channel: str = Field(default="online", pattern="^(online|pos|atm|mobile)$")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @field_validator("merchant_country", "ip_country", mode="before")
     @classmethod
@@ -50,12 +50,7 @@ class TransactionBase(BaseModel):
 
 
 class TransactionCreate(TransactionBase):
-    transaction_id: Optional[str] = Field(default=None, description="Optional client-provided transaction ID")
-
-    @field_validator("transaction_id", mode="before")
-    @classmethod
-    def generate_id(cls, v: Optional[str]) -> str:
-        return v or str(uuid4())
+    transaction_id: str = Field(default_factory=lambda: str(uuid4()), description="Transaction ID")
 
 
 class Transaction(TransactionBase):
@@ -219,7 +214,7 @@ class HealthResponse(BaseModel):
 class WebSocketMessage(BaseModel):
     type: str = Field(..., pattern="^(alert|transaction|metrics|heartbeat|error)$")
     data: dict[str, Any]
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class UserProfile(BaseModel):
@@ -240,7 +235,7 @@ class UserProfile(BaseModel):
     preferred_merchants: list[str] = Field(default_factory=list)
     home_country: Optional[str] = None
     home_city: Optional[str] = None
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class FeatureVector(BaseModel):

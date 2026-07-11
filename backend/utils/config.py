@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     CORS_ALLOW_HEADERS: list[str] = Field(default_factory=lambda: ["*"])
 
     # Database (PostgreSQL)
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/fraud_detection"
+    DATABASE_URL: str = "postgresql+asyncpg://amin@localhost:5432/fraud_detection"
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
     DATABASE_POOL_TIMEOUT: int = 30
@@ -111,7 +111,7 @@ class Settings(BaseSettings):
             return [int(x.strip()) for x in v.split(",")]
         return v
 
-    @field_validator("HIGH_RISK_COUNTRIES", mode="before")
+    @field_validator("RULE_HIGH_RISK_COUNTRIES", mode="before")
     @classmethod
     def parse_high_risk_countries(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str):
