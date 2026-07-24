@@ -14,6 +14,7 @@ from backend.services.alert_service import alert_service
 from backend.services.fraud_detector import fraud_detector
 from backend.services.websocket_manager import ws_manager
 from backend.utils.config import settings
+from backend.data_processing.data_validator import transaction_validator
 
 
 class TransactionProcessor:
@@ -42,8 +43,11 @@ class TransactionProcessor:
         start_time = time.time()
         user_id = transaction.user_id
 
+        validation_result = transaction_validator.validate(transaction)
+        validation_warnings = validation_result.to_dict()
+
         recent_txs = await self._get_recent_transactions(session, user_id)
-        profile = await self._get_user_profile(session, user_id)
+        profile = await self._get_user_profile(session, user_id, recent_txs)
 
         result = fraud_detector.analyze(transaction, profile, recent_txs)
 
@@ -107,6 +111,7 @@ class TransactionProcessor:
             "triggered_rules": result.triggered_rules,
             "status": TransactionStatus.FRAUD.value if result.is_fraud else TransactionStatus.APPROVED.value,
             "processing_time_ms": result.processing_time_ms,
+            "validation_warnings": validation_warnings.get("warnings", []),
         }
 
         await ws_manager.broadcast_transaction(tx_dict)
@@ -284,7 +289,7 @@ class TransactionProcessor:
         )
         return [self._model_to_dict(t) for t in result.scalars().all()]
 
-    async def _get_user_profile(self, session: AsyncSession, user_id: str) -> dict[str, Any] | None:
+    async def _get_user_profile(self, session: AsyncSession, user_id: str, recent_txs: list[dict[str, Any]] | None = None) -> dict[str, Any] | None:
         result = await session.execute(select(UserProfileModel).where(UserProfileModel.user_id == user_id))
         profile = result.scalar_one_or_none()
         if profile is None:
@@ -305,6 +310,7 @@ class TransactionProcessor:
             "last_tx_device": profile.last_tx_device,
             "preferred_channels": profile.preferred_channels or [],
             "preferred_merchants": profile.preferred_merchants or [],
+            "preferred_devices": list(set(t.get("device_id") for t in (recent_txs or [])[-100:] if t.get("device_id"))) if recent_txs else [],
             "home_country": profile.home_country,
             "home_city": profile.home_city,
         }

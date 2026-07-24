@@ -1,5 +1,5 @@
-const API_BASE = 'http://localhost:8000/api/v1'
-const WS_BASE = 'ws://localhost:8000/api/v1'
+const API_BASE = '/api/v1'
+const WS_BASE = 'ws://' + window.location.host + '/api/v1'
 
 class FraudApiService {
   async request(endpoint, options = {}) {

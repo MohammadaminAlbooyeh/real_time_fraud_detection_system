@@ -24,6 +24,7 @@ from backend.services.transaction_processor import transaction_processor
 from backend.services.websocket_manager import ws_manager
 from backend.utils.config import settings
 from backend.utils.database import get_async_session
+from backend.utils.redis_client import redis_client
 
 router = APIRouter(prefix=settings.API_PREFIX)
 _start_time = time.time()
@@ -35,7 +36,7 @@ async def health_check():
         status="healthy",
         version=settings.APP_VERSION,
         database="connected",
-        redis="not_connected",
+        redis="connected" if redis_client.connected else "not_connected",
         model_loaded=fraud_detector.model_loaded,
         model_version=settings.MODEL_VERSION,
         uptime_seconds=time.time() - _start_time,

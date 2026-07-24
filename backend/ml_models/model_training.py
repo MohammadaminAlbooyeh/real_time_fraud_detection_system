@@ -279,10 +279,12 @@ def train_model(
         metrics = evaluate_model(y_test, y_pred, y_proba)
 
         try:
+            preprocessor_path = Path(settings.MODEL_PATH).parent / "preprocessor.pkl"
+            preprocessor.save(preprocessor_path)
             for metric_name, metric_value in metrics.items():
                 mlflow.log_metric(metric_name, metric_value)
             mlflow.sklearn.log_model(model, "model")
-            mlflow.log_artifact(preprocessor.save, "preprocessor.pkl")
+            mlflow.log_artifact(str(preprocessor_path), "preprocessor.pkl")
         except Exception:
             pass
 
@@ -300,7 +302,9 @@ def train_model(
             for metric_name, metric_value in metrics.items():
                 mlflow.log_metric(metric_name, metric_value)
             mlflow.sklearn.log_model(model, "model")
-            mlflow.log_artifact(preprocessor.save, "preprocessor.pkl")
+            preprocessor_path = Path(settings.MODEL_PATH).parent / "preprocessor.pkl"
+            preprocessor.save(preprocessor_path)
+            mlflow.log_artifact(str(preprocessor_path), "preprocessor.pkl")
         except Exception:
             pass
 

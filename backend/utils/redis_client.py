@@ -12,6 +12,11 @@ class RedisClient:
     def __init__(self):
         self._pool: Optional[redis.ConnectionPool] = None
         self._client: Optional[Redis] = None
+        self._connected = False
+
+    @property
+    def connected(self) -> bool:
+        return self._connected
 
     async def connect(self) -> None:
         self._pool = redis.ConnectionPool.from_url(
@@ -22,8 +27,10 @@ class RedisClient:
             decode_responses=True,
         )
         self._client = redis.Redis(connection_pool=self._pool)
+        self._connected = True
 
     async def disconnect(self) -> None:
+        self._connected = False
         if self._client:
             await self._client.close()
         if self._pool:

@@ -1,8 +1,8 @@
 from functools import lru_cache
-from typing import Optional
+from typing import Annotated, Optional
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -26,10 +26,10 @@ class Settings(BaseSettings):
     WORKERS: int = 4
 
     # CORS
-    CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:5173", "http://localhost:3000"])
+    CORS_ORIGINS: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:5173", "http://localhost:3000"])
     CORS_ALLOW_CREDENTIALS: bool = True
-    CORS_ALLOW_METHODS: list[str] = Field(default_factory=lambda: ["*"])
-    CORS_ALLOW_HEADERS: list[str] = Field(default_factory=lambda: ["*"])
+    CORS_ALLOW_METHODS: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["*"])
+    CORS_ALLOW_HEADERS: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["*"])
 
     # Database (PostgreSQL)
     DATABASE_URL: str = "postgresql+asyncpg://amin@localhost:5432/fraud_detection"
@@ -52,13 +52,13 @@ class Settings(BaseSettings):
     KAFKA_ENABLED: bool = False
 
     # ML Model
-    MODEL_PATH: str = "/app/models/fraud_model.onnx"
+    MODEL_PATH: str = "/app/models/xgboost_model.pkl"
     MODEL_VERSION: str = "1.0.0"
     MODEL_THRESHOLD: float = 0.5
     FEATURE_STORE_PATH: str = "/app/models/feature_store.pkl"
 
     # Feature Engineering
-    FEATURE_WINDOW_SIZES: list[int] = Field(default_factory=lambda: [3600, 86400, 604800])  # 1h, 24h, 7d
+    FEATURE_WINDOW_SIZES: Annotated[list[int], NoDecode] = Field(default_factory=lambda: [3600, 86400, 604800])
     VELOCITY_WINDOW_SECONDS: int = 3600
     USER_PROFILE_TTL: int = 86400 * 30  # 30 days
 
@@ -66,7 +66,7 @@ class Settings(BaseSettings):
     RULE_VELOCITY_TX_COUNT_THRESHOLD: int = 10
     RULE_VELOCITY_AMOUNT_THRESHOLD: float = 10000.0
     RULE_ROUND_AMOUNT_THRESHOLD: float = 0.01
-    RULE_HIGH_RISK_COUNTRIES: list[str] = Field(default_factory=lambda: ["KP", "IR", "SY", "CU", "VE"])
+    RULE_HIGH_RISK_COUNTRIES: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["KP", "IR", "SY", "CU", "VE"])
     RULE_IMPOSSIBLE_TRAVEL_SPEED_KMH: float = 1000.0
     RULE_NEW_DEVICE_RISK_SCORE: float = 0.3
     RULE_NEW_LOCATION_RISK_SCORE: float = 0.2
@@ -99,24 +99,50 @@ class Settings(BaseSettings):
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
-    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
+    def parse_cors_origins(cls, v):
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        if isinstance(v, list):
+            return [str(item).strip() for item in v]
+        return [str(v)]
+
+    @field_validator("CORS_ALLOW_METHODS", mode="before")
+    @classmethod
+    def parse_cors_methods(cls, v):
+        if isinstance(v, str):
+            if v.strip() == "*":
+                return ["*"]
+            return [m.strip() for m in v.split(",") if m.strip()]
+        if isinstance(v, list):
+            items = [str(item).strip() for item in v]
+            return ["*"] if items == ["*"] else items
+        return ["*"]
+
+    @field_validator("CORS_ALLOW_HEADERS", mode="before")
+    @classmethod
+    def parse_cors_headers(cls, v):
+        if isinstance(v, str):
+            if v.strip() == "*":
+                return ["*"]
+            return [h.strip() for h in v.split(",") if h.strip()]
+        if isinstance(v, list):
+            items = [str(item).strip() for item in v]
+            return ["*"] if items == ["*"] else items
+        return ["*"]
 
     @field_validator("FEATURE_WINDOW_SIZES", mode="before")
     @classmethod
-    def parse_feature_windows(cls, v: str | list[int]) -> list[int]:
+    def parse_feature_windows(cls, v):
         if isinstance(v, str):
-            return [int(x.strip()) for x in v.split(",")]
-        return v
+            return [int(x.strip()) for x in v.split(",") if x.strip()]
+        return [int(x) for x in v]
 
     @field_validator("RULE_HIGH_RISK_COUNTRIES", mode="before")
     @classmethod
-    def parse_high_risk_countries(cls, v: str | list[str]) -> list[str]:
+    def parse_high_risk_countries(cls, v):
         if isinstance(v, str):
-            return [c.strip().upper() for c in v.split(",")]
-        return [c.upper() for c in v]
+            return [c.strip().upper() for c in v.split(",") if c.strip()]
+        return [str(c).upper() for c in v]
 
 
 @lru_cache

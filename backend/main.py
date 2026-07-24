@@ -13,6 +13,7 @@ from backend.services.transaction_processor import transaction_processor
 from backend.services.websocket_manager import ws_manager
 from backend.utils.config import settings
 from backend.utils.database import init_db, close_db
+from backend.utils.redis_client import redis_client
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL),
@@ -28,6 +29,10 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
     await init_db()
+    try:
+        await redis_client.connect()
+    except Exception as e:
+        logger.warning(f"Redis connection failed: {e}")
     model_loaded = fraud_detector.load_model()
     logger.info(f"ML model loaded: {model_loaded}")
     await ws_manager.start_heartbeat()
@@ -35,6 +40,7 @@ async def lifespan(app: FastAPI):
     yield
     await transaction_processor.stop()
     await ws_manager.cleanup()
+    await redis_client.disconnect()
     await close_db()
     logger.info("Application shutdown complete")
 

@@ -161,7 +161,7 @@ class FeatureExtractor:
         profile: dict[str, Any] | None,
     ) -> dict[str, float]:
         new_device = 0.0
-        if profile and tx.device_id not in (profile.get("preferred_channels") or []):
+        if profile and tx.device_id not in (profile.get("preferred_devices") or []):
             new_device = 1.0
         if not profile:
             new_device = 0.0

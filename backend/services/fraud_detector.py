@@ -31,11 +31,18 @@ class FraudDetector:
         path = Path(path)
 
         if not path.exists():
-            fallback = path.parent / "fraud_model.pkl"
-            if fallback.exists():
-                path = fallback
+            models_dir = path.parent
+            if models_dir.exists():
+                pkl_models = sorted(models_dir.glob("*_model.pkl"))
+                onnx_models = sorted(models_dir.glob("*.onnx"))
+                candidates = onnx_models or pkl_models
+                if candidates:
+                    path = candidates[0]
+                else:
+                    print(f"No model files found in {models_dir}")
+                    return False
             else:
-                print(f"Model not found at {path}")
+                print(f"Models directory not found: {models_dir}")
                 return False
 
         try:
