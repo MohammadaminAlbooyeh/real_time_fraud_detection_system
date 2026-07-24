@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: sqlite+aiosqlite:////tmp/fraud_detection_ci.db
+      REDIS_URL: redis://localhost:6379/0
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install -e .
+      - name: Run backend tests
+        run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
+  browser-api-smoke:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: sqlite+aiosqlite:////tmp/fraud_detection_ci_smoke.db
+      REDIS_URL: redis://localhost:6379/0
+      PYTHONPATH: ${{ github.workspace }}
+      SMOKE_BASE_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend and browser test dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install -e .
+          pip install pytest-playwright playwright
+          playwright install --with-deps chromium
+      - name: Start backend
+        run: |
+          cd backend
+          python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 > /tmp/fraud_backend.log 2>&1 &
+          echo $! > /tmp/fraud_backend.pid
+          sleep 10
+      - name: Run browser API smoke test
+        run: pytest tests/test_browser_api_smoke.py -q
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f /tmp/fraud_backend.pid ]; then kill "$(cat /tmp/fraud_backend.pid)" || true; fi

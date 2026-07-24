@@ -58,6 +58,18 @@ npm run build
 - Backups and restore procedures are verified for Postgres.
 - Redis eviction and memory policy are set for expected traffic.
 - Model rollback procedure is documented and tested.
+- A smoke test against the deployed API returns healthy before traffic is shifted.
+- A smoke test against Redis succeeds in the production network segment.
+- A rollback plan exists for failed deploys and failed model swaps.
+- Alert routing is verified in the production environment.
+
+## CI pipeline
+
+The repository now includes a GitHub Actions workflow at [`.github/workflows/ci.yml`](/Users/amin/Documents/MyProjects/real_time_fraud_detection_system/.github/workflows/ci.yml) that:
+
+- runs backend tests against SQLite and a Redis service container
+- builds the frontend
+- executes on pushes and pull requests to `main`
 
 ## Open deployment work
 
