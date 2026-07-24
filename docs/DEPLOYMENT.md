@@ -44,6 +44,21 @@ npm run build
 - Confirm Redis and Postgres are reachable at startup.
 - Confirm transaction submission creates a persisted record and optional alert.
 
+## Production checklist
+
+- Database migrations applied successfully in the target environment.
+- `DATABASE_URL` points to the production Postgres instance.
+- `REDIS_URL` points to the production Redis instance.
+- `MODEL_PATH` resolves to the deployed inference artifact.
+- `CORS_ORIGINS` contains only the production frontend origins.
+- Reverse proxy forwards `/api/v1/*` and WebSocket routes to the backend.
+- Static frontend assets are built and served from the production host or CDN.
+- Health checks are configured for the API and, if applicable, the container orchestrator.
+- Log aggregation and alerting are enabled.
+- Backups and restore procedures are verified for Postgres.
+- Redis eviction and memory policy are set for expected traffic.
+- Model rollback procedure is documented and tested.
+
 ## Open deployment work
 
 - Verify the deployment image or server has the correct model files.
